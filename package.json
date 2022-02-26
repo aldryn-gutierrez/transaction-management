@@ -2,15 +2,15 @@
     "name": "account-management-fullstack",
     "version": "0.0.1",
     "scripts": {
-      "build:backend": "cd app-flask && pip3 install -r requirements.txt",
-      "build:frontend": "cd app-react && npm install && npm run build",
-      "build": "npm run build:backend & npm run build:frontend",
-      "start:backend": "cd app-flask && export FLASK_APP=app.py && python3 -m flask run",
-      "start:frontend": "cd app-react &&  npm run start",
-      "start": "npm run start:backend & npm run start:frontend",
-      "test": "cypress run"
+        "build:backend": "cd app-flask && pip3 install -r requirements.txt",
+        "build:frontend": "cd app-react && npm install && npm run build",
+        "build": "npm run build:backend & npm run build:frontend",
+        "start:backend": "cd app-flask && export FLASK_APP=app.py && python3 -m flask run",
+        "start:frontend": "cd app-react &&  npm run start",
+        "start": "npm run start:backend & npm run start:frontend",
+        "test": "cypress run"
     },
     "devDependencies": {
-      "cypress": "^5.4.0"
+        "cypress": "^5.4.0"
     }
-  }
+}

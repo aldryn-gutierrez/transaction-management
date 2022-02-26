@@ -18,93 +18,73 @@ app = Flask(__name__)
 app.config.from_mapping(config)
 cache = Cache(app)
 
-@app.route('/init', methods=['GET'])
-def init():
+accounts = {
+    "001": Account("001", 10),
+    "002": Account("002", 20),
+    "003": Account("003", 30)
+}
 
-    accounts = {
-        "001": Account("001", 10),
-        "002": Account("002", 20),
-        "003": Account("003", 30)
-    }
+transactions = []
 
-    cache.set("accounts", accounts)
-    return {"message": "Successfully initialized"}, 200
+cache.set("accounts", accounts)
+cache.set("transactions", transactions)
 
+@app.route('/ping', methods=['GET'])
+def ping():
+    return {"message": "pong"}, 200
 
 @app.route('/account', methods=['GET'])
 def get_accounts():
     accounts: dict[str, Account]= cache.get("accounts")
-
-
-
     return  {"Success": json.dump()} , 200
 
-@app.route('/account/<account_id>', methods=['GET'])
+@app.route('/accounts/<account_id>', methods=['GET'])
 def get_account(account_id):
     accounts = cache.get("accounts")
-    account = accounts[account_id]
+    account: Account | None = accounts[account_id]
 
     if account is None:
         return {"message": "Account not found"}, 404
     
-    return account, 200
+    return account.toJson(), 200
 
-@app.route('/transaction', methods=['GET', 'POST'])
-def transaction():
-    authenticated_account_id = request.headers.get('account_id')
-    if authenticated_account_id is None:
-        return {"message": "Unauthorized"}, 401
-        
-    if request.method == 'POST':
-        data = request.get_json()
-
-        accounts: dict[str, Account] = cache.get("accounts")
-        if authenticated_account_id not in accounts:
-            return {"message": "Authenticated Account not found"}, 400
-
-        if data["account_id"] not in accounts:
-            return {"message": "Account not found"}, 400
-
-        account = accounts[authenticated_account_id]
-
-
-        # Update Account if not same as Authenticated
-        is_same_account = authenticated_account_id == data["account_id"]
-        balance = account.amount + data["amount"]
-        if not is_same_account:
-            target_account = accounts[data["account_id"]]
-            target_account.amount = target_account.amount + data["amount"]
-            accounts[data["account_id"]] = target_account
-
-            # Subtract Amount from Authenticated Account
-            balance = account.amount - data["amount"]
-
-        
-        # Add Authenticated Account Transactions
-        transaction = Transaction(str(uuid1()), data["amount"], data["account_id"], balance)
-        account.transactions.append(transaction)
-        
-        # Persist all account changes
-        account.amount = balance
-        accounts[authenticated_account_id] = account
+@app.route('/transactions', methods=['POST'])
+def post_transaction():
+    data = request.get_json()
+    
+    accounts: dict[str, Account] = cache.get("accounts")
+    if data["account_id"] not in accounts:
+        # Create an account
+        account = Account(data["account_id"], 0)
+        accounts[data["account_id"]] = account
         cache.set("accounts", accounts)
 
-        return json.dumps([transaction.__dict__ for transaction in account.transactions]), 200
-    else:
-        # You probably don't have args at this route with GET
-        # method, but if you do, you can access them like so:
-        # yourarg = flask.request.args.get('argname')
-        # your_register_template_rendering(yourarg)
-        
-        data = request.get_json()
+    account = accounts[data["account_id"]]
 
-        accounts: dict[str, Account] = cache.get("accounts")
-        account = accounts[authenticated_account_id]
+    transaction_id = str(uuid1())
+    transaction = Transaction(transaction_id, data["amount"], data["account_id"], 0)
 
-        if account is None:
-            return {"message": "Account not found"}, 400
+    # Persist all account changes
+    account.balance = account.balance + data["amount"]
+    accounts[data["account_id"]] = account
+    cache.set("accounts", accounts)
 
-        return json.dumps([transaction.__dict__ for transaction in account.transactions]), 200
+    # Persist in Transactions
+    transactions: list  = cache.get("transactions")
+    transactions.append(transaction)
+    cache.set("transactions", transactions)
+
+    return transaction.toJson(), 201
+
+@app.route('/transactions/<transaction_id>', methods=['GET'])
+def get_transaction(transaction_id):
+    transactions: list = cache.get("transactions")
+    transaction: Transaction | None = next((item for item in transactions if item.transaction_id == transaction_id), None)
+
+    if transaction is None:
+        return {"message": "Transaction not found"}, 400
+
+    return transaction.toJson(), 200
 
 if __name__ == '__main__':
     app.run(debug=True)
