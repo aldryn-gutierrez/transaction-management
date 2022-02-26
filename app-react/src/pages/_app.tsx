@@ -1,8 +1,14 @@
 import React, { ReactElement } from 'react';
 import type { AppProps } from "next/app";
+import { ThemeProvider } from 'theme-ui'
+import { theme } from '../theme'
 
 export function App({ Component, pageProps }: AppProps): ReactElement {
-  return <Component {...pageProps} />
+  return (
+    <ThemeProvider theme={theme}>
+      <Component {...pageProps} />
+    </ThemeProvider>
+  )
 }
 
 export default App;
