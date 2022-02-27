@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { ReactElement } from 'react';
 import { Heading } from 'theme-ui';
 import TransactionForm from './TransactionForm';
@@ -12,4 +12,4 @@ const TransactionCreation = () : ReactElement => {
   );
 }
 
-export default TransactionCreation;
+export default memo(TransactionCreation);

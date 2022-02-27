@@ -1,15 +1,12 @@
 import React, { ReactElement } from 'react';
 import { Box, Heading } from 'theme-ui';
 import { useAccounts } from '../../contexts/AccountContext';
-import { useAccountTransactionsQuery } from '../../queries/account';
+import { useTransactionsQuery } from '../../queries/transaction';
 import HistoricalTransaction from './HistoricalTransaction';
 
 const HistoricalTransactions = ():ReactElement => {
   const { accountId } = useAccounts();
-
-  const { data: transactions, isSuccess } = useAccountTransactionsQuery(accountId);
-
-  console.log(transactions)
+  const { data: transactions, isSuccess } = useTransactionsQuery();
 
   return (
     <React.Fragment>
@@ -17,7 +14,10 @@ const HistoricalTransactions = ():ReactElement => {
       {isSuccess && (
         <Box m={2}>
           {transactions?.reverse().map(
-            transaction => <HistoricalTransaction key={transaction.transaction_id} transaction={transaction} /> 
+            transaction => { 
+              const isActiveClient = accountId === transaction.account_id;
+              return <HistoricalTransaction key={transaction.transaction_id} transaction={transaction} isActiveClient={isActiveClient} />
+            } 
           )}
         </Box>
       )}

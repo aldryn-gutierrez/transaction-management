@@ -7,9 +7,7 @@ import TransactionCreation from '../components/Transaction/TransactionCreation';
 import { AccountContext } from '../contexts/AccountContext';
 
 export const HomePage = (): ReactElement => {
-
   const [accountId, setAccountId] = useState("");
-  
   return (
     <AccountContext.Provider value={{ accountId, setAccountId }}>
       <Grid columns={"4fr 8fr"} p={3}>

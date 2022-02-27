@@ -1,9 +1,8 @@
-import React, { ReactElement } from 'react';
+import React, { memo, ReactElement } from 'react';
 import { Flex, Text } from 'theme-ui';
-import { useAccounts } from '../../contexts/AccountContext';
 import ITransaction from '../../interfaces/ITransaction';
 
-const HistoricalTransaction = ({ transaction } : { transaction: ITransaction }):ReactElement => {
+const HistoricalTransaction = ({ transaction, isActiveClient } : { transaction: ITransaction, isActiveClient: boolean }): ReactElement => {
   return (
     <Flex 
       data-type="transaction"
@@ -13,10 +12,10 @@ const HistoricalTransaction = ({ transaction } : { transaction: ITransaction }):
       mb={2} 
       sx={{ border: "1px solid black", flexDirection: "column" }}
     >
-      <Text>Transferred ${`${transaction.amount}`} from account {`${transaction.account_id}`}</Text>
-      <Text>The current account balance is ${`${transaction.balance}`}</Text>
+      <Text>Transferred ${`${transaction.amount}`} {`${isActiveClient ? "from" : "to"}`} account {`${transaction.account_id}`}</Text>
+      {isActiveClient && <Text>The current account balance is ${`${transaction.balance}`}</Text>}
     </Flex>
   )
 }
 
-export default HistoricalTransaction;
+export default memo(HistoricalTransaction);

@@ -3,12 +3,10 @@ import { ReactElement } from 'react';
 import { useQueryClient } from 'react-query';
 import { Box, Label, Input, Button, Text } from 'theme-ui';
 import { useAccounts } from '../../contexts/AccountContext';
-import ITransaction from '../../interfaces/ITransaction';
-// import { useAccountQuery } from '../../queries/account';
 import { useAddTransactionMutation } from '../../queries/transaction';
+import { isUUIDValid } from '../../utils/uuid';
 
 const TransactionForm = () : ReactElement => {
-
   const queryClient = useQueryClient();
   
   const [accountId, setAccountId] = useState("");
@@ -19,35 +17,24 @@ const TransactionForm = () : ReactElement => {
   const mutation = useAddTransactionMutation(
     accountId,
     parseFloat(amount),
-    (data: ITransaction) => {
+    () => {
       setClientAccount(accountId);
-      const transactions: Array<ITransaction> | undefined = queryClient.getQueryData(["transactions", accountId])
-      if (transactions) {
-        transactions.push(data)
-        queryClient.setQueryData(["transactions", accountId], transactions)
-      }
 
-      // void queryClient.invalidateQueries(["transactions", accountId]);
+      void queryClient.invalidateQueries(["transactions"]);
       setAmount("");
       setAccountId("");
     }
   );
 
-  const isUUIDValid = (accountId: string) => {
-    return /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(accountId);
-  }
-
-
   const handleSubmit = () => {
     setErrorMessage("")
-
     
-    if (accountId == "" || !isUUIDValid(accountId)) {
-      setErrorMessage("Please enter your Account Id");
+    if (!isUUIDValid(accountId)) {
+      setErrorMessage("Please enter a valid UUID Account Id");
       return;
     }
 
-    if (amount == "" || isNaN(amount)) {
+    if (amount == "" || isNaN(+amount)) {
       setErrorMessage("Please enter valid amount");
       return;
     }

@@ -4,6 +4,7 @@ import { ThemeProvider } from 'theme-ui'
 import { theme } from '../theme'
 import { QueryClient, QueryClientProvider } from 'react-query';
 
+// Initialize Query Client for Data Management (Caching, Persistence)
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: { refetchOnWindowFocus: false },

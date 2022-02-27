@@ -1,12 +1,10 @@
 import json
-import pprint
-from uuid import uuid1
-from flask import request, jsonify, Flask
+from flask import request, Flask
 from flask_caching import Cache
 from flask_cors import CORS
 
-from models.account import Account
-from models.transaction import Transaction
+from services.account_service import AccountService
+from services.transaction_service import TransactionService
 
 config = {
     "DEBUG": True,          # some Flask specific configs
@@ -20,73 +18,75 @@ CORS(app)
 app.config.from_mapping(config)
 cache = Cache(app)
 
-accounts = {}
-transactions = []
-
-cache.set("accounts", accounts)
-cache.set("transactions", transactions)
+account_service = AccountService(cache)
+transaction_service = TransactionService(cache)
 
 @app.route('/ping', methods=['GET'])
 def ping():
     return {"message": "pong"}, 200
 
-@app.route('/account', methods=['GET'])
-def get_accounts():
-    accounts: dict[str, Account]= cache.get("accounts")
-    return  {"Success": json.dump()} , 200
-
 @app.route('/accounts/<account_id>', methods=['GET'])
 def get_account(account_id):
-    accounts = cache.get("accounts")
-    account: Account | None = accounts[account_id]
+    try:
+        account = account_service.get_by_account_id(account_id)
+    except:
+        # To Add Error Logging and Rollback Mechanism here
+        return {"message": "Unexpected Error Occured"}, 500
 
     if account is None:
         return {"message": "Account not found"}, 404
 
-    transactions = cache.get("transactions")
-    account_transaction = [transaction for transaction in transactions if transaction.account_id == account_id]
-
-    response = account.toJson()
-    response["transactions"] = account_transaction
-
-    return json.loads(json.dumps(response, default=lambda o: o.__dict__)), 200
+    return account.toJson(), 200
 
 @app.route('/transactions', methods=['POST'])
 def post_transaction():
     data = request.get_json()
+
+    if (data["account_id"] is None):
+        return {"message": "Please enter the account id"}, 400
+
+    if (data["amount"] is None):
+        return {"message": "Please enter the amount"}, 400
     
-    accounts: dict[str, Account] = cache.get("accounts")
-    if data["account_id"] not in accounts:
-        # Create an account
-        account = Account(data["account_id"], 0)
-        accounts[data["account_id"]] = account
-        cache.set("accounts", accounts)
+    try:
+        account = account_service.get_by_account_id(data["account_id"])
+        if account is None:
+            # Create an account
+            account = account_service.create(data["account_id"], 0)
 
-    account = accounts[data["account_id"]]
+        # Persist all account changes
+        account_service.update(account, data["amount"])
 
-    # Persist all account changes
-    account.balance = account.balance + data["amount"]
-    accounts[data["account_id"]] = account
-    cache.set("accounts", accounts)
-
-    # Persist in Transactions
-    transaction_id = str(uuid1())
-    transaction = Transaction(transaction_id, data["amount"], data["account_id"], account.balance)
-    transactions: list  = cache.get("transactions")
-    transactions.append(transaction)
-    cache.set("transactions", transactions)
+        # Persist in Transactions
+        transaction = transaction_service.create(data["amount"], data["account_id"], account.balance)
+    except:
+        # To Add Error Logging and Rollback Mechanism here
+        return {"message": "Unexpected Error Occured"}, 500
 
     return transaction.toJson(), 201
 
 @app.route('/transactions/<transaction_id>', methods=['GET'])
 def get_transaction(transaction_id):
-    transactions: list = cache.get("transactions")
-    transaction: Transaction | None = next((item for item in transactions if item.transaction_id == transaction_id), None)
+    try:
+        transaction = transaction_service.get_by_transaction_id(transaction_id) 
+    except:
+        # To Add Error Logging and Rollback Mechanism here
+        return {"message": "Unexpected Error Occured"}, 500
 
     if transaction is None:
         return {"message": "Transaction not found"}, 400
 
     return transaction.toJson(), 200
+
+@app.route('/transactions', methods=['GET'])
+def get_transactions():
+    try:
+        transactions = transaction_service.get_all() 
+    except:
+        # To Add Error Logging and Rollback Mechanism here
+        return {"message": "Unexpected Error Occured"}, 500
+
+    return json.dumps(transactions, default=lambda x: x.__dict__), 200
 
 if __name__ == '__main__':
     app.run(debug=True)
