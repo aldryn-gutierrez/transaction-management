@@ -2,6 +2,8 @@ import axios from "axios";
 import { QueryObserverResult, useMutation, UseMutationResult, useQuery } from "react-query";
 import ITransaction from "../interfaces/ITransaction";
 
+const ENDPOINT_URL = "http://localhost:5000/transactions"; // Move to config
+
 export const useAddTransactionMutation = (
   accountId: string,
   amount: number,
@@ -10,7 +12,7 @@ export const useAddTransactionMutation = (
   return useMutation(async () => {
     const { data } = await axios.request<ITransaction>({
       method: "POST",
-      url: `http://localhost:5000/transactions`,
+      url: ENDPOINT_URL,
       data: {
         account_id: accountId,
         amount
@@ -30,7 +32,7 @@ export const useTransactionsQuery = (): QueryObserverResult<Array<ITransaction>>
     async () => {
       const { data } = await axios.request<Array<ITransaction>>({
         method: "GET",
-        url: `http://localhost:5000/transactions`,
+        url: ENDPOINT_URL,
       });
     
       return data;
