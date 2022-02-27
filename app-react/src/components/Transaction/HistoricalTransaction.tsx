@@ -10,7 +10,7 @@ const HistoricalTransaction = ({ transaction, isActiveClient } : { transaction: 
       data-amount={transaction.amount}
       data-balance={transaction.balance}
       mb={2} 
-      sx={{ border: "1px solid black", flexDirection: "column" }}
+      sx={{ border: "1px solid black", height: "50px", flexDirection: "column" }}
     >
       <Text>Transferred ${`${transaction.amount}`} {`${isActiveClient ? "from" : "to"}`} account {`${transaction.account_id}`}</Text>
       {isActiveClient && <Text>The current account balance is ${`${transaction.balance}`}</Text>}

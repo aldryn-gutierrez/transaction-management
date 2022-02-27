@@ -10,7 +10,7 @@ const HistoricalTransactions = ():ReactElement => {
 
   return (
     <React.Fragment>
-      <Heading>Historical Transaction {accountId != "" && `For ${accountId}`}</Heading>
+      <Heading>Historical Transaction</Heading>
       {isSuccess && (
         <Box m={2}>
           {transactions?.reverse().map(
