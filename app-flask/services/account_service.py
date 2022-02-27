@@ -9,7 +9,7 @@ class AccountService:
     self.cache.set(self.table_name, accounts, timeout=0)
 
   def get_by_account_id(self, account_id: str):
-    accounts = self.cache.get("accounts")
+    accounts = self.cache.get(self.table_name)
     account: Account | None = next((item for item in accounts if item.account_id == account_id), None)
 
     return account

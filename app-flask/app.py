@@ -2,7 +2,6 @@ import json
 from flask import request, Flask
 from flask_caching import Cache
 from flask_cors import CORS
-
 from services.account_service import AccountService
 from services.transaction_service import TransactionService
 
