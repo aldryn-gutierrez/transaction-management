@@ -3,6 +3,7 @@ import pprint
 from uuid import uuid1
 from flask import request, jsonify, Flask
 from flask_caching import Cache
+from flask_cors import CORS
 
 from models.account import Account
 from models.transaction import Transaction
@@ -14,16 +15,12 @@ config = {
 }
 
 app = Flask(__name__)
+CORS(app)
 # tell Flask to use the above defined config
 app.config.from_mapping(config)
 cache = Cache(app)
 
-accounts = {
-    "001": Account("001", 10),
-    "002": Account("002", 20),
-    "003": Account("003", 30)
-}
-
+accounts = {}
 transactions = []
 
 cache.set("accounts", accounts)
@@ -45,8 +42,14 @@ def get_account(account_id):
 
     if account is None:
         return {"message": "Account not found"}, 404
-    
-    return account.toJson(), 200
+
+    transactions = cache.get("transactions")
+    account_transaction = [transaction for transaction in transactions if transaction.account_id == account_id]
+
+    response = account.toJson()
+    response["transactions"] = account_transaction
+
+    return json.loads(json.dumps(response, default=lambda o: o.__dict__)), 200
 
 @app.route('/transactions', methods=['POST'])
 def post_transaction():
@@ -61,15 +64,14 @@ def post_transaction():
 
     account = accounts[data["account_id"]]
 
-    transaction_id = str(uuid1())
-    transaction = Transaction(transaction_id, data["amount"], data["account_id"], 0)
-
     # Persist all account changes
     account.balance = account.balance + data["amount"]
     accounts[data["account_id"]] = account
     cache.set("accounts", accounts)
 
     # Persist in Transactions
+    transaction_id = str(uuid1())
+    transaction = Transaction(transaction_id, data["amount"], data["account_id"], account.balance)
     transactions: list  = cache.get("transactions")
     transactions.append(transaction)
     cache.set("transactions", transactions)
